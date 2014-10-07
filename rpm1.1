@@ -433,6 +433,9 @@ class Write():
                             n = addNote()
                             dshelf[name][3] = n
                             input("saved. [enter]...")
+            else:
+                dshelf.close()
+                Run().mainMenu()                       # escape to main menu.
             dshelf.close()                            # save and close shelf.
             self.edit(name)                 # edit same name (until escaped).
         except KeyError:
@@ -630,7 +633,7 @@ class Options():
             self.__editEmail__(oshelf)
         elif eE in ("s", "S"):
             self.__defaultEmail__(oshelf)                # set default email.
-        self.emailOptions(oshelf)
+        self.emailOptions(oshelf)         # loop email options until escaped.
 
     def usernameOptions(self, oshelf):
         Helpers().__displayList__(self.usernames, "usernames")
@@ -647,7 +650,7 @@ class Options():
             self.__editUsername__(oshelf)
         elif uU in ("s", "S"):
             self.__defaultUsername__(oshelf)          # set default username.
-        self.usernameOptions(oshelf)
+        self.usernameOptions(oshelf)  # loop username options until esccaped.
 
     def lengthOptions(self, oshelf):
         print("\ncurrent length is", str(self.length) + " characters.")
@@ -728,16 +731,15 @@ class Options():
             if input("0 is for no email. cannot delete.\n"
                      "[enter] email options. [t]ry again: ") in ("t", "T"):
                 self.__delEmail__(oshelf)                        # try again.
-            else:
-                self.emailOptions(oshelf)            # back to email options.
-        if iD not in ("", "*"):
+        elif iD not in ("", "*"):
             email = self.emails[iD]                            # iD is valid.
-            if input("remove " + email + "? [y]es [n]o:") in \
-                    ("y", "Y", "yes"):
-                del oshelf["emails"][iD]
-                del self.emails[iD]
-                print(email, "deleted. [enter]."),
-                input()                                    # pause for input.
+            if input("remove " + email + "? [y]es [n]o:").lower() in \
+                    ("y", "yes"):
+                temp = self.emails[:]
+                temp.pop(iD)
+                self.emails = temp
+                oshelf["emails"] = temp
+                input("'%s' deleted. [enter]." % email)
             else:                                             # abort remove.
                 input("nothing deleted. [enter].")
 
@@ -752,16 +754,15 @@ class Options():
                      "[enter] username options. [t]ry again: ") \
                     in ("t", "T"):
                 self.__delUsername__(oshelf)                     # try again.
-            else:
-                self.usernameOptions(oshelf)      # back to username options.
-        if iD not in ("", "*"):
-            username = self.usernames[iD]
-            if input("remove " + username + "? [y]es [n]o:") in \
-                    ("y", "Y", "yes"):
-                del oshelf["usernames"][iD]
-                del self.usernames[iD]
-                print(username, "deleted. [enter].")
-                input()                                    # pause for input.
+        elif iD not in ("", "*"):
+            username = self.usernames[iD]                      # iD is valid.
+            if input("remove " + username + "? [y]es [n]o:").lower() in \
+                    ("y", "yes"):
+                temp = self.usernames[:]
+                temp.pop(iD)
+                self.usernames = temp
+                oshelf["usernames"] = temp
+                input("'%s' deleted. [enter]." % username)
             else:                                             # abort remove.
                 input("nothing deleted. [enter].")
 
@@ -769,7 +770,7 @@ class Options():
         if len(self.emails) == 1:
             input("no emails to edit. [enter] email options.")
             self.emailOptions(oshelf)               # options
-        print("[enter] options menu. edit email (number): ")
+        print("[enter] email options. edit email (number): ")
         if self.__editList__(self.emails, oshelf, "emails"):
             Helpers().__displayList__(self.emails, "emails")
             i = input("[enter] email options. [e]dit another: ")
@@ -794,8 +795,8 @@ class Options():
     def __defaultEmail__(self, oshelf):
         if len(self.emails) == 1:
             input("add an email first. [enter] go back")
-            return oshelf                                          # options.
-        print("[enter] email options. email to set as default (number): ")
+            self.emailOptions(oshelf)                # back to email options.
+        print("[enter] email options. email to set as default [number]: ")
         iD = Helpers().__validID__(self.emails)
         if iD == 0:
             if input("0 is for no email. cannot set as default.\n"
@@ -816,8 +817,8 @@ class Options():
         if len(self.usernames) == 1:
             input("add a username first. [enter] go back")
             self.usernameOptions(oshelf)          # back to username options.
-        print("[enter] username options. "
-              "username to set as default (number): ")
+        print("[enter] username options."
+              " username to set as default [number]: ")
         iD = Helpers().__validID__(self.usernames)
         if iD == 0:
             if input("0 is for no username. cannot set as default.\n"
@@ -833,12 +834,13 @@ class Options():
             oshelf["usernames"] = temp
             input("'%s' saved as default. [enter]." % d)
 
-    @staticmethod
-    def __editList__(mylist, oshelf, key):
+    def __editList__(self, mylist, oshelf, key):
         ind = Helpers().__validID__(mylist)
         if ind == "":
-            oshelf.close()
-            Options().optionsMenu()
+            if key == "emails":
+                self.emailOptions(oshelf)
+            elif key == "usernames":
+                self.usernameOptions(oshelf)
         elif ind == 0:
             print("0 is for none.")
             return False
@@ -875,7 +877,7 @@ class Helpers():
             entry = input("username: ")
         if entry not in mylist:
             mylist.append(entry)
-            oshelf[key].append(entry)
+            oshelf[key] = mylist
             return True, entry
         return False, entry
 
