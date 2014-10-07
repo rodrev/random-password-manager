@@ -1,19 +1,20 @@
 """ copywrite 2014 Roddie D. Reventar
 
-    *************************************************************************
-    **  IMPORTANT  **
-    *****************
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ***  IMPORTANT  ***
+
     Place this file in its own directory before running it to prevent
         accidental rewriting of coincidentally-named files.
         Recommended to also make it a hidden directory (starting with `.`)
 
     Running this file creates two files.
-        1. `options.db`                 (Don't create or rename manually)
-        Stores options. Not human readable. Rename if you wish on line 76.
+        1. `options.db`                  (Don't create or rename manually)
+        Stores options. Not human readable. Rename if you wish on line 77.
 
-        2. `file1.db`                    (Don't create or rename manually)
-        Stores data.  Not human readable. Rename if you wish on line 77.
-    _________________________________________________________________________
+        2. `data.db`                   (Don't create or rename manually)
+        Stores data.  Not human readable. Rename if you wish on line 78.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Protect your sensitive information with some simple security measures:
 
@@ -27,16 +28,16 @@
         The main menu gives you all the choices needed to manage your log
         in data. Except for 'delete all', which is intentionally not
         available. If you would like to delete all your data, you'll need to
-        delete the DATA file from your system (named on line 77). If you have
+        delete the DATA file from your system (named on line 78). If you have
         followed the advice above, this will again require your system
         password, keeping your data safer.
 
         Leaving this program open on your desktop is not safe, in case you
         step away from your computer, forget to log out, etc.
         Always quit immediately when you're done... it starts up quickly!
-    _________________________________________________________________________
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     To run, enter in a terminal:
-        'sudo /path/to/thisfile'
+        `sudo python3 /path/to/thisfile`
 
     Simplify the run command to `xyz`.
         Instead of `xyz` choose any unique name, then enter in a terminal:
@@ -45,7 +46,7 @@
 
     Restart your terminal. Then to run, just enter in terminal:
         `xyz`       (you should be prompted for your system p.w.)
-    _________________________________________________________________________
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Multiple files:
     If you'd like to manage more than one set of data (for work vs home use,
     or for whatever reason) the best way is to create another separate
@@ -60,11 +61,10 @@
     enter your options again. Same for the DATA file, although it may be
     less useful to have the same data available in two locations...except as
     a backup.
-    _________________________________________________________________________
-    Feedback welcome on github.  Version 2 in the works if in demand.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Feedback welcome.  Version 2 if in demand.
 
-    Bugs: I'll fix any reported to: roddiereventar@live.ca
-    I don't check github all the time. Comments about bugs may not be seen.
+    Bugs: roddiereventar@live.ca
 
     Enjoy!
-    ______________________________________________________________________"""
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ """
