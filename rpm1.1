@@ -314,11 +314,12 @@ class Write():
             randomly adjusted +/- some value within self.lrange """
         characters = "abcdefghijklmnopqrstuvwxyz"\
                      "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+        numchars = self.length
         if self.punctuation:
             characters += "!#$%&()*+,-./:;<=>?@[]^_{|}~"   # add punctuation.
         if self.lrange != 0:                              # randomize length.
-            self.length += randint(-self.lrange, self.lrange)
-        return "".join(choice(characters) for _ in range(self.length))
+            numchars += randint(-self.lrange, self.lrange)
+        return "".join(choice(characters) for _ in range(numchars))
 
     def get(self):
         dshelf = shelve.open(DATA)                               # read only.
