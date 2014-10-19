@@ -531,7 +531,7 @@ class Write():
             ok, username = Helpers().__addEntry__(self.usernames, oshelf,
                                                   "usernames")
             oshelf.close()
-            print(username, "saved to your email list.") if ok else \
+            print(username, "saved to your usernames list.") if ok else \
                 print("already have", username, "saved.")
             return username                     # return username either way.
         else:
