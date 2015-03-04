@@ -73,8 +73,7 @@ from random import randint, choice
 from os import path
 from sys import argv
 import shelve
-print(list(argv))
-exit()
+
 # Filenames to create in this directory:
 OPTIONS = "opt"                      # to store your options         (bytes).
 DATA = "dat"                         # to store your data            (bytes).
@@ -151,7 +150,7 @@ class Run():
         menu = {
             "1": "Write().make()",                                  # ==> make.
             "2": "Write().make(rand=False)",              # ==> enter yourself.
-            "3": "Write().quick()",                                # ==> quick.
+            "3": "print(Write().quick())",                         # ==> quick.
             "4": "Write().get()",                                    # ==> get.
             "5": "Write().edit()",                                  # ==> edit.
             "6": "Write().delete()",                              # ==> delete.
@@ -163,7 +162,8 @@ class Run():
         i = input()
         if i in menu:
             eval(menu[i])
-        self.mainMenu()                  # loop main menu until [quit] given.
+            input("[enter] ...")              # pause before looping main menu.
+        self.mainMenu()                    # loop main menu until [quit] given.
 
     def printAll(self):
         dshelf = shelve.open(DATA)                               # read only.
@@ -325,8 +325,7 @@ class Write():
             characters += "!#$%&()*+,-./:;<=>?@[]^_{|}~"   # add punctuation.
         if self.lrange != 0:                              # randomize length.
             numchars += randint(-self.lrange, self.lrange)
-        print("".join(choice(characters) for _ in range(numchars)))
-        input("\n[enter]...")                                        # pause.
+        return "".join(choice(characters) for _ in range(numchars))
 
     def get(self, commandlinearg=False):
         dshelf = shelve.open(DATA)                               # read only.
