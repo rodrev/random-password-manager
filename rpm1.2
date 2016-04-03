@@ -336,7 +336,10 @@ class Write():
                 Run().mainMenu()                       # escape to main menu.
             else:
                 if commandlinearg:
-                    print(dshelf[commandlinearg][2])  # just print pw of arg.
+                    print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+                    Helpers.__displayData__(dshelf, commandlinearg)     # display data.
+                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+                    # print(dshelf[commandlinearg][2])  # just print pw of arg.
                     dshelf.close()
                     exit()                                      # quick exit.
                 print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
