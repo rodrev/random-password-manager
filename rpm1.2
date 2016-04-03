@@ -122,11 +122,14 @@ class Run():
         self.punctuation = p
 
     def mainMenu(self):
-        # Command line argument.
-        if len(argv) == 2:                 # argv[0] is this script's filename.
-            Write().get(argv[1])                   # Get p.w. of each argument.
-        if len(argv) > 2:
-            print("one argument at a time please")
+        # Command line arguments (argv[0] is filename).
+        numargs = len(argv)
+        if numargs == 2:  Write().get(argv[-1])  # full info
+        elif numargs == 3 and '--quiet' in argv:
+            argv.remove('--quiet')
+            Write().get(argv[-1], quiet=True)    # p.w. only
+        elif numargs >= 3:
+            print("one argument at a time please.  use --quiet for p.w. only.")
             self.quit()
         print("""
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -327,7 +330,7 @@ class Write():
             numchars += randint(-self.lrange, self.lrange)
         return "".join(choice(characters) for _ in range(numchars))
 
-    def get(self, commandlinearg=False):
+    def get(self, commandlinearg=False, quiet=False):
         dshelf = shelve.open(DATA)                               # read only.
         try:
             if len(dshelf) == 0:
@@ -336,10 +339,12 @@ class Write():
                 Run().mainMenu()                       # escape to main menu.
             else:
                 if commandlinearg:
-                    print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-                    Helpers.__displayData__(dshelf, commandlinearg)     # display data.
-                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-                    # print(dshelf[commandlinearg][2])  # just print pw of arg.
+                    if quiet:
+                        print(dshelf[commandlinearg][2])  # pw only.
+                    else:
+                        print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+                        Helpers.__displayData__(dshelf, commandlinearg)     # display data.
+                        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
                     dshelf.close()
                     exit()                                      # quick exit.
                 print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
