@@ -15,22 +15,22 @@ $ git clone https://github.com/rodrev/random-password-manager.git
 
 `$ sudo python3 $HOME/random-password-manager/rpm.py`
 
-Simplify the run command:
+Simplify the command:
 
-    `$ echo "alias rpm='sudo python3 $HOME/random-password-manager/rpm.py'" >> $HOME/.bashrc`
+> `$ echo "alias rpm='sudo python3 $HOME/random-password-manager/rpm.py'" >> $HOME/.bashrc`
 
-- restart terminal. then enter:
+- restart your terminal, then enter:
 
-    `$ rpm`
+> `$ rpm`
 
 
 # NOTE
 
-Creates two files in the random-password-manager directory.
+Creates two files in the *random-password-manager* directory.
 
-**opt** stores OPTIONS (email addresses, usernames & preferences). *to rename edit line 53 of rpm.py*
+**opt** stores OPTIONS (email addresses, usernames & preferences). *to rename edit line 10 of rpm.py*
 
-**dat** stores DATA.                                               *to rename edit line 54 of rpm.py*
+**dat** stores DATA.                                               *to rename edit line 11 of rpm.py*
 
 These are gdbm database files (bytecode) created using the `shelve` module of the standard python library.
 
@@ -75,10 +75,15 @@ Choose by number.
 `8` change all entries to new random passwords (don't do this unless you first print your old passwords)
 
 `9` options:
+
 	- manage email addresses
+	
 	- manage usernames
+	
 	- choose length to make random passwords
+	
 	- choose a length range (+/-) to make random passwords
+	
 	- choose to use punctuation in your passwords (except for quotes and backslashes which are trouble)
 
 `0` save everything and exit the program
@@ -215,7 +220,9 @@ Choose 4 from the main menu
 `4`
 
 >	names:
+
 >	Google
+
 --------------------------------------------
 
 [enter] main menu. get entry [name]: `Google`
@@ -239,7 +246,8 @@ BACKUP this file and its directory regularly onto a separate drive.
 	
 To delete all entries at once please delete the data file. A new data file will be created 
 the next time you make an entry from the main menu:
-`sudo rm $HOME/random-password-manager/dat`
+
+> `sudo rm $HOME/random-password-manager/dat`
 
 QUIT when you're done. It starts quickly!
 
@@ -250,6 +258,8 @@ Install again and rename directory to `random-password-manager-work`.
 
 Create another alias `rpm-work`
 
+> `$ echo "alias rpm-work='sudo python3 $HOME/random-password-manager-work/rpm.py'" >> $HOME/.bashrc`
+
 New OPTIONS and DATA files will be generated and treated separately within this directory.
 
 Each installation is completely independent.
@@ -258,4 +268,5 @@ Each installation is completely independent.
 ## FEEDBACK WELCOME
 
 Send comments, feature requests, bugs to roddiereventar@live.ca
+
 
