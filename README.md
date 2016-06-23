@@ -15,13 +15,14 @@ $ git clone https://github.com/rodrev/random-password-manager.git
 
 `$ sudo python3 $HOME/random-password-manager/rpm.py`
 
+
 Simplify the command:
 
-> `$ echo "alias rpm='sudo python3 $HOME/random-password-manager/rpm.py'" >> $HOME/.bashrc`
+`$ echo "alias rpm='sudo python3 $HOME/random-password-manager/rpm.py'" >> $HOME/.bashrc`
 
-- restart your terminal, then enter:
+restart your terminal, then enter:
 
-> `$ rpm`
+`$ rpm`
 
 
 # NOTE
@@ -171,6 +172,7 @@ This time it happened to be `.w+U>?UAW$bJ>Uk`
 
 - default random password length is 16 characters. 
 	- change it to any length in ***[9] options***
+
 - some punctuation may be used in the random password by default.
 	- turn off punctuation in ***[9] options***
 
@@ -247,7 +249,7 @@ BACKUP this file and its directory regularly onto a separate drive.
 To delete all entries at once please delete the data file. A new data file will be created 
 the next time you make an entry from the main menu:
 
-> `sudo rm $HOME/random-password-manager/dat`
+`sudo rm $HOME/random-password-manager/dat`
 
 QUIT when you're done. It starts quickly!
 
@@ -258,15 +260,9 @@ Install again and rename directory to `random-password-manager-work`.
 
 Create another alias `rpm-work`
 
-> `$ echo "alias rpm-work='sudo python3 $HOME/random-password-manager-work/rpm.py'" >> $HOME/.bashrc`
+`$ echo "alias rpm-work='sudo python3 $HOME/random-password-manager-work/rpm.py'" >> $HOME/.bashrc`
 
 New OPTIONS and DATA files will be generated and treated separately within this directory.
 
 Each installation is completely independent.
-
-
-## FEEDBACK WELCOME
-
-Send comments, feature requests, bugs to roddiereventar@live.ca
-
 
