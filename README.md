@@ -254,7 +254,7 @@ the next time you make an entry from the main menu:
 QUIT when you're done. It starts quickly!
 
 
-## SEPARATE WORK FROM PERSONAL PASSWORDS
+# SEPARATE WORK FROM PERSONAL PASSWORDS
 
 Install again and rename directory to `random-password-manager-work`.
 
