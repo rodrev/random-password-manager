@@ -1,83 +1,15 @@
-#!/usr/bin/env python3
-""" copywrite 2014 Roddie D. Reventar
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    ***  IMPORTANT  ***
-
-    Place this file in its own directory before running it to prevent
-        accidental rewriting of coincidentally-named files.
-        Recommended to also make it a hidden directory (starting with `.`)
-
-    Running this file creates two files.
-        1. `options.db`                  (Don't create or rename manually)
-        Stores options. Not human readable. Rename if you wish on line 77.
-
-        2. `data.db`                   (Don't create or rename manually)
-        Stores data.  Not human readable. Rename if you wish on line 78.
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Protect your sensitive information with some simple security measures:
-
-        Rename this file to something else to prevent it being found easily.
-
-        Ensure elevated privileges are required to run or modify associated
-        files. This can be done by changing owner (and group owner)
-        of this directory recursively to root (enter in a terminal):
-        `sudo chown -R root:root /path/to/thisdirectory`
-
-        The main menu gives you all the choices needed to manage your log
-        in data. Except for 'delete all', which is intentionally not
-        available. If you would like to delete all your data, you'll need to
-        delete the DATA file from your system (named on line 78). If you have
-        followed the advice above, this will again require your system
-        password, keeping your data safer.
-
-        Leaving this program open on your desktop is not safe, in case you
-        step away from your computer, forget to log out, etc.
-        Always quit immediately when you're done... it starts up quickly!
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    To run, enter in a terminal:
-        `sudo python3 /path/to/thisfile`
-
-    Simplify the run command to `xyz`.
-        Instead of `xyz` choose any unique name, then enter in a terminal:
-        `echo "alias xyz='cd /path/to/thisdirectory && sudo ./thisfile'" \
-            >> /path/to/.bashrc`
-
-    Restart your terminal. Then to run, just enter in terminal:
-        `xyz`       (you should be prompted for your system p.w.)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Multiple files:
-    If you'd like to manage more than one set of data (for work vs home use,
-    or for whatever reason) the best way is to create another separate
-    directory and copy this file into it.  Follow steps above to easily have
-    unique commands pointing to each copy.  In this case, each will have
-    its own OPTIONS file (for email addresses, usernames & preferences) and
-    its own DATA file and be completely separate.
-
-    Note: you can copy the OPTIONS file into the new directory,
-    if you wish.  For example, if you set up all your options first, then
-    copy the OPTIONS and this file into a new directory, you don't have to
-    enter your options again. Same for the DATA file, although it may be
-    less useful to have the same data available in two locations...except as
-    a backup.
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Feedback welcome.  Version 2 if in demand.
-
-    Bugs: roddiereventar@live.ca
-
-    Enjoy!
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ """
 from random import randint, choice
-from os import path
+from os import path, getcwd
 from sys import argv
 import shelve
 
+REL=path.dirname(argv[0])  # relative path of directory containing this file
+ABS=path.abspath(REL)      # absolute path of directory containing this file
+
 # Filenames to create in this directory:
-OPTIONS = "opt"                      # to store your options         (bytes).
-DATA = "dat"                         # to store your data            (bytes).
-PRINTHERE = "txt"                    # to print data to text file     (text).
+OPTIONS   = ABS + "/opt"                    # to store your options         (bytes).
+DATA      = ABS + "/dat"                    # to store your data            (bytes).
+PRINTHERE = ABS + "/txt"                    # to print data to text file     (text).
 # PRINTHERE used by 'print all' feature, which allows you to override
 # ... the default PRINTHERE value by entering your own filename.
 
@@ -122,15 +54,13 @@ class Run():
         self.punctuation = p
 
     def mainMenu(self):
-        # Command line arguments (argv[0] is filename).
-        numargs = len(argv)
-        if numargs == 2:  Write().get(argv[-1])  # full info
-        elif numargs == 3 and '--quiet' in argv:
-            argv.remove('--quiet')
-            Write().get(argv[-1], quiet=True)    # p.w. only
-        elif numargs >= 3:
-            print("one argument at a time please.  use --quiet for p.w. only.")
-            self.quit()
+        # COMMAND LINE ARGUMENTS (ARGV[0] IS FILENAME).
+        if len(argv) > 1:
+            if "--quiet" in argv:
+                argv.remove("--quiet")
+                Write().get(" ".join(argv[1:]), quiet=True)     # p.w. only
+            else:
+                Write().get(" ".join(argv[1:]))                 # full info
         print("""
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  random p.a.s.s.w.o.r.d. manager
