@@ -1,29 +1,32 @@
 from random import randint, choice
-from os import path, getcwd
-from sys import argv
+import os
 import shelve
+import sys
 
-REL=path.dirname(argv[0])  # relative path of directory containing this file
-ABS=path.abspath(REL)      # absolute path of directory containing this file
+
+# relative path of directory containing this file.
+REL = os.path.dirname(sys.argv[0])
+# absolute path of directory containing this file.
+ABS = os.path.abspath(REL)
 
 # Filenames to create in this directory:
-OPTIONS   = ABS + "/opt"                    # to store your options         (bytes).
-DATA      = ABS + "/dat"                    # to store your data            (bytes).
-PRINTHERE = ABS + "/txt"                    # to print data to text file     (text).
+OPTIONS = ABS + "/opt"                    # to store your options      (bytes).
+DATA = ABS + "/dat"                       # to store your data         (bytes).
+PRINTHERE = ABS + "/txt"                  # to print data to text file (text).
 # PRINTHERE used by 'print all' feature, which allows you to override
 # ... the default PRINTHERE value by entering your own filename.
 
 
-class Run():
+class Run:
     def __init__(self):
-        # Defaults: (e)mails, (u)sernames, (l)ength, (lr)ange, (p)unctuation.
-        e, u, l, lr, p = [""], [""], 15, 0, True
-        if path.isfile(OPTIONS):                        # OPTIONS file found.
+        # Defaults: (e)mails, (u)sernames, (le)ngth, (lr)ange, (p)unctuation.
+        e, u, le, lr, p = [""], [""], 15, 0, "all"
+        if os.path.isfile(OPTIONS):                     # OPTIONS file found.
             oshelf = shelve.open(OPTIONS, writeback=True)
             try:                            # get settings from OPTIONS file.
                 e = oshelf["emails"]
                 u = oshelf["usernames"]
-                l = oshelf["length"]
+                le = oshelf["length"]
                 lr = oshelf["lrange"]
                 p = oshelf["punctuation"]
                 oshelf.close()
@@ -41,7 +44,7 @@ class Run():
             oshelf = shelve.open(OPTIONS, writeback=True)
             oshelf["emails"] = e
             oshelf["usernames"] = u
-            oshelf["length"] = l
+            oshelf["length"] = le
             oshelf["lrange"] = lr
             oshelf["punctuation"] = p
             oshelf.close()
@@ -49,18 +52,21 @@ class Run():
         # Otherwise, initialize from OPTIONS file.
         self.emails = e
         self.usernames = u
-        self.length = l
+        self.length = le
         self.lrange = lr
         self.punctuation = p
 
     def mainMenu(self):
         # COMMAND LINE ARGUMENTS (ARGV[0] IS FILENAME).
-        if len(argv) > 1:
-            if "--quiet" in argv:
-                argv.remove("--quiet")
-                Write().get(" ".join(argv[1:]), quiet=True)     # p.w. only
+        if len(sys.argv) > 1:
+            if "--quiet" in sys.argv:
+                sys.argv.remove("--quiet")
+                Write().get(" ".join(sys.argv[1:]), quiet=True)
+            elif "-q" in sys.argv:
+                sys.argv.remove("-q")
+                Write().get(" ".join(sys.argv[1:]), quiet=True)
             else:
-                Write().get(" ".join(argv[1:]))                 # full info
+                Write().get(" ".join(sys.argv[1:]))
         print("""
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  random p.a.s.s.w.o.r.d. manager
@@ -225,7 +231,8 @@ class Write():
                         break
             else:
                 raise KeyError       # 'name' in DATA but no data ==> except.
-        except KeyError:  # new 'name' or no data. get new data & write to DATA.
+        except KeyError:
+            # new 'name' or no data. get new data & write to DATA.
             new = self.__inputData__(dshelf, rand)   # input/make data tuple.
             dshelf[name] = {0: new[0],                         # shelf email.
                             1: new[1],                      # shelf username.
@@ -237,7 +244,7 @@ class Write():
             input("saved. [enter]...")
         except IOError:                                    # problem writing!
             print("could not write to: %s\n"
-                  "make sure '%s' is a valid filename on your system.\n"
+                  "make sure '%s' is a valid filename.\n"
                   "you can edit/add filenames via [options]."
                   % (DATA, DATA))
             input("[enter] main menu.")
@@ -251,48 +258,51 @@ class Write():
             and (if True) punctuation. Length of string is determined by
             self.length. If self.lrange is non-zero, then self.length is
             randomly adjusted +/- some value within self.lrange """
+        punctuationmarks = {
+            "all": "!#$%&()*+,-./:;<=>?@[]^_{|}~",
+            "safeascii": "%+-./:=@_",
+            "limited": "@._-",
+            "none": ""
+        }
         characters = "abcdefghijklmnopqrstuvwxyz"\
-                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
-        numchars = self.length
-        if self.punctuation:
-            characters += "!#$%&()*+,-./:;<=>?@[]^_{|}~"   # add punctuation.
-        if self.lrange != 0:                              # randomize length.
-            numchars += randint(-self.lrange, self.lrange)
+                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"\
+                     "1234567890" + punctuationmarks[self.punctuation]
+        numchars = self.length + randint(-self.lrange, self.lrange) \
+            if self.lrange > 0 else self.length
         return "".join(choice(characters) for _ in range(numchars))
 
-    def get(self, commandlinearg=False, quiet=False):
+    def get(self, name="", quiet=False):
         dshelf = shelve.open(DATA)                               # read only.
-        try:
-            if len(dshelf) == 0:
-                input("database is empty. make an entry first [enter].")
-                dshelf.close()
-                Run().mainMenu()                       # escape to main menu.
-            else:
-                if commandlinearg:
-                    if quiet:
-                        print(dshelf[commandlinearg][2])  # pw only.
-                    else:
-                        print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-                        Helpers.__displayData__(dshelf, commandlinearg)     # display data.
-                        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-                    dshelf.close()
-                    exit()                                      # quick exit.
+        if len(dshelf) > 0:
+            try:
+                if name:
+                    try:
+                        Helpers.__displayData__(dshelf, name=name, quiet=quiet)
+                    except KeyError:
+                        print('not found')
+                        pass
+                    finally:
+                        dshelf.close()
+                        exit()                                  # quick exit.
                 print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
                 print("names:")
                 for key in sorted(dshelf):
                     print(key)                               # display names.
                 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
                 name = input("[enter] main menu. get entry [name]: ")
-                if name == "":
+                if name:
+                    Helpers.__displayData__(dshelf, name)     # display data.
+                    input("[enter]...")
+                else:
                     dshelf.close()
                     Run().mainMenu()                   # escape to main menu.
-                else:
-                    print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-                    Helpers.__displayData__(dshelf, name)     # display data.
-                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-                    input("[enter]...")
-        except KeyError:
-            input("no data for '%s'. [enter]..." % name)  # no data for name.
+            except KeyError:
+                print('name not found')
+                pass
+        else:
+            input("database is empty. make an entry first [enter].")
+            dshelf.close()
+            Run().mainMenu()                       # escape to main menu.
         dshelf.close()
         self.get()                 # get another until [enter] for main menu.
 
@@ -346,10 +356,10 @@ class Write():
                     add = input("[enter] done. note(s): ")
                     return add + "\n" + addNote() if add else ""
                 notes = dshelf[name][3].split("\n")  # split lines into list.
-                l = len(notes)
-                for n in range(l):
+                ln = len(notes)
+                for n in range(ln):
                     print(n + 1, notes[n])
-                if l > 1:
+                if ln > 1:
                     while True:
                         i = input("[enter] go back. [a]dd line(s). "
                                   "edit line [number]: ")
@@ -603,14 +613,14 @@ class Options():
 
     def lengthOptions(self, oshelf):
         print("\ncurrent length is", str(self.length) + " characters.")
-        l = input("[enter] options menu. set length:  ")
-        if l != "":                                       # not [enter] ("").
+        ln = input("[enter] options menu. set length:  ")
+        if ln != "":                                       # not [enter] ("").
             try:
-                l = int(l)
-                assert l > 0
-                self.length = l
-                oshelf["length"] = l
-                print("length set to", l, "characters.")
+                ln = int(ln)
+                assert ln > 0
+                self.length = ln
+                oshelf["length"] = ln
+                print("length set to", ln, "characters.")
             except (ValueError, AssertionError):       # bad input try again.
                 print("length must be a positive integer.")
                 self.lengthOptions(oshelf)
@@ -632,25 +642,20 @@ class Options():
             self.rangeOptions(oshelf)
 
     def punctuationOptions(self, oshelf):
-        i = "00"
-        if self.punctuation:
-            print("\npunctuation setting is on.")
-            print("[enter] options menu. turn punctuation off? [y]es [n]o: ")
-            while i.lower() not in ("", "y", "yes", "n", "no"):
-                i = input()                     # loop silently if bad input.
-                if i.lower() in ("y", "yes"):
-                    self.punctuation = False
-                    oshelf["punctuation"] = False
-                    print("punctuation off.")
-        else:
-            print("\punctuation setting is off.")
-            print("<enter options menu. turn punctuation on? [y]es [n]o: ")
-            while i.lower() not in ("", "y", "yes", "n", "no"):
-                i = input()                     # loop silently if bad input.
-                if i.lower() in ("y", "yes"):
-                    self.punctuation = True
-                    oshelf["punctuation"] = True
-                    print("punctuation on.")
+        print("\ncurrent punctuation", self.punctuation)
+        print("[enter] options menu")
+        print("[a] all !#$%&()*+,-./:;<=>?@[]^_{|}~")
+        print("[s] safe ascii %+-./:=@_")
+        print("[l] limited @._-")
+        print("[n] none")
+        punc = {"a": "all", "s": "safeascii", "l": "limited", "n": "none"}
+        i = "input string"
+        while (len(i) > 0) and (i not in punc):
+            i = input().lower()  # loop if bad input.
+            if i in punc:
+                self.punctuation = punc[i]
+                oshelf["punctuation"] = self.punctuation
+                print("punctuation set to {}.".format(self.punctuation))
 
     def __addEmail__(self, oshelf):
         ok, e = Helpers().__addEntry__(self.emails, oshelf, "emails")
@@ -844,12 +849,30 @@ class Helpers():
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
 
     @staticmethod
-    def __displayData__(dshelf, name):
-        data = dshelf[name]             # data is itself a dictionary object.
-        print(name)
-        for key in range(len(data)):       # keys were defined as 0, 1, 2, 3.
-            if data[key]:
-                print(data[key])          # display contents of field if any.
+    def __displayData__(dshelf, name, quiet=False):
+        data = dshelf[name]               # data is itself a dictionary object.
+        if quiet:
+            try:
+                # sys.stdout.write(data[2])                        # p.w. only.
+                print(data[2])                          # p.w. only.
+                # flush output here to force SIGPIPE to be triggered
+                # while inside this try block.
+                sys.stdout.flush()
+            except BrokenPipeError:
+                # Python flushes standard streams on exit;
+                # redirect remaining output to devnull to avoid
+                # another BrokenPipeError at shutdown
+                devnull = os.open(os.devnull, os.O_WRONLY)
+                os.dup2(devnull, sys.stdout.fileno())
+                sys.exit(1)  # Python exits with error code 1 on EPIPE
+        else:
+            print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+            print(name)
+            for key in range(len(data)):     # keys were defined as 0, 1, 2, 3.
+                if data[key]:
+                    print(data[key])        # display contents of field if any.
+            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+
 
 if __name__ == "__main__":
     Run().mainMenu()
