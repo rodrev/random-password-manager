@@ -9,13 +9,11 @@ REL = os.path.dirname(sys.argv[0])
 ABS = os.path.abspath(REL)
 
 # Filenames to create in this directory:
-OPTIONS = ABS + "/opt"  # to store your options   (bytes).
-DATA = ABS + "/dat"  # to store your data         (bytes).
-PRINT = ABS + "/txt"  # to print data to text file (text).
-
-
+OPTIONS = ABS + "/opt"  # to store your options (bytes).
+DATA = ABS + "/dat"  # to store your data (bytes).
 # PRINT used by 'print all' feature, which allows you to override
-# ... the default PRINT value by entering your own filename.
+# the default PRINT value by entering your own filename.
+PRINT = ABS + "/txt"  # to print data to text file (text).
 
 
 class Run:
@@ -23,7 +21,7 @@ class Run:
         # Defaults: emails, usernames, length, lrange, punctuation.
         e, u, le, lr, p = [""], [""], 15, 0, "all"
         if os.path.isfile(OPTIONS):  # OPTIONS file found.
-            oshelf = shelve.open(OPTIONS, writeback=True)  # options shelf
+            oshelf = shelve.open(OPTIONS, writeback=True)  # options shelf.
             try:  # get settings from OPTIONS file.
                 e = oshelf["emails"]
                 u = oshelf["usernames"]
@@ -41,7 +39,7 @@ class Run:
             print(OPTIONS, "file created. default options saved.\n"
                            "select [options] from menu to customize.")
             # Create OPTIONS file to shelve defaults into like a dictionary..
-            # Strings (keys) : Any object (values)
+            # Strings (keys) : Any object (values).
             oshelf = shelve.open(OPTIONS, writeback=True)
             oshelf["emails"] = e
             oshelf["usernames"] = u
@@ -106,7 +104,7 @@ class Run:
         self.main_menu()  # loop main menu until [quit] given.
 
     def print_all(self):
-        dshelf = shelve.open(DATA)  # read only data shelf
+        dshelf = shelve.open(DATA)  # read only data shelf.
         alphabetical = sorted(dshelf)  # returns sorted list of names.
         if len(dshelf) == 0:
             input("no data yet. [enter] main menu.")
@@ -765,7 +763,7 @@ class Options:
         if len(self.emails) == 1:
             input("no emails to edit.\n"
                   "[enter] email options.\n")
-            self.email_options(oshelf)  # options
+            self.email_options(oshelf)  # options.
         print("[enter] email options.\n"
               "[number] edit email.\n")
         if self.__editList__(self.emails, oshelf, "emails"):
@@ -871,7 +869,7 @@ class Helpers:
                 return number  # return string (special option).
             else:
                 number = int(number)  # try converting input to integer.
-                assert number in range(len(mylist))  # confirm is a valid index.
+                assert number in range(len(mylist))  # confirm is valid index.
                 return number
         except (ValueError, AssertionError):
             print("try again: ")
@@ -916,7 +914,7 @@ class Helpers:
             except BrokenPipeError:
                 # Python flushes standard streams on exit;
                 # redirect remaining output to devnull to avoid
-                # another BrokenPipeError at shutdown
+                # another BrokenPipeError at shutdown.
                 devnull = os.open(os.devnull, os.O_WRONLY)
                 os.dup2(devnull, sys.stdout.fileno())
                 sys.exit(1)  # Python exits with error code 1 on EPIPE
