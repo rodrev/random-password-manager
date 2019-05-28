@@ -1,0 +1,14 @@
+{
+    "scriptname": "rpm.py",
+    "mddocfile": "README.md",
+    "creationdate": "2019-05-25",
+    "author": "roddie",
+    "license": "GPL v3",
+    "copyright": "Copyright (c) roddie, 2019",
+    "version": "0.0.1",
+    "email": "roddie@archlinux950",
+    "description": "",
+    "uuid": "9365d4d4-7ef8-11e9-a64c-086266bc9f58",
+    "importdirs": [],
+    "encoding": ""
+}
