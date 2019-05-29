@@ -81,21 +81,21 @@ class Run:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """)
         menu = {
-            "1": "Write().new_entry()",
-            "2": "Write().new_entry(rand=False)",
-            "3": "print(Write().generate_random())",
-            "4": "Write().get_entry()",
-            "5": "Write().edit_entry()",
-            "6": "Write().delete_entry()",
-            "7": "self.print_or_save_all()",
-            "8": "Write().change_all()",
-            "9": "Options().options_menu()",
-            "0": "self.goodbye()"
+            "1": Write().new_random_entry,
+            "2": Write().new_entry,
+            "3": Write().print_random,
+            "4": Write().get_entry,
+            "5": Write().edit_entry,
+            "6": Write().delete_entry,
+            "7": Write().print_or_save_all,
+            "8": Write().change_all,
+            "9": Options().options_menu,
+            "0": self.goodbye
         }
         i = 'dummy'
         while i not in menu:
             i = input()
-        eval(menu[i])
+        menu[i]()
         input("[enter]...\n")  # pause
         self.main_menu()  # loop Main Menu until [Quit]
 
@@ -106,48 +106,6 @@ class Run:
             Write().get_entry_no_ui(name=" ".join(name[1:]), quiet=True)
         else:
             Write().get_entry_no_ui(name=" ".join(name), quiet=False)
-
-    def print_or_save_all(self):
-        dshelf = shelve.open(DATA)  # read only data shelf
-        alphabetical = sorted(dshelf)  # sorted list of names
-        if len(dshelf) == 0:
-            input("No data yet\n"
-                  "[enter] main menu\n")
-            dshelf.close()
-            self.main_menu()  # no data. back to main menu
-        print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        for name in alphabetical:
-            Helpers().__display_data__(dshelf, name)  # display 'name' data
-            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        i = "dummy"
-        while i not in ("", "s"):
-            i = input("\n[enter] main menu\n"
-                      "[s] save all data to plain text file (not recommended!)")
-        if i == "s":  # save data to file
-            newpath = input(f"[enter] save to {SAVE}\n"
-                            f"[filepath] save here\n")
-            filepath = newpath if newpath else SAVE  # use default filepath
-            # unless one is given by user
-            mode = "dummy"
-            while mode not in ("", "w", "a"):
-                mode = input(f"[enter] cancel\n"
-                             f"[w] write {SAVE} (overwrite if it exists)\n"
-                             f"[a] append {SAVE}\n").lower()
-            if not mode:
-                dshelf.close()
-                self.print_or_save_all()  # go back (try again)
-            with open(filepath, mode) as f:  # save data to file f
-                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", file=f)
-                for name in alphabetical:  # iterate (sorted) names
-                    print(name, file=f)  # print 'name' to file
-                    data = dshelf[name]
-                    for key in range(len(data)):  # iterate fields (keys)
-                        if data[key]:  # if data in field
-                            print(data[key], file=f)  # print to file
-                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", file=f)
-            print(f"{SAVE} {'written' if mode == 'w' else 'appended'}")
-            input("[enter]...\n")
-        dshelf.close()  # ==> main menu
 
     # ~~ Setters and getters ~~
     # todo: integrate setters and getters
@@ -184,199 +142,115 @@ class Run:
 
 class Write:
     def __init__(self):
-        run = Run()
-        self.emails = run.__get_emails__()
-        self.usernames = run.__get_usernames__()
-        self.length = run.__get_length__()
-        self.lrange = run.__get_range__()
-        self.punctuation = run.__get_punctuation__()
+        self.run = Run()
+        self.emails = self.run.__get_emails__()
+        self.usernames = self.run.__get_usernames__()
+        self.length = self.run.__get_length__()
+        self.lrange = self.run.__get_range__()
+        self.punctuation = self.run.__get_punctuation__()
+        self.random = False
+        self.dshelf = shelve.open(DATA, writeback=True)
+
+    def main_menu(self):
+        self.dshelf.close()
+        self.run.main_menu()
 
     def change_all(self):
-        dshelf = shelve.open(DATA, writeback=True)
-        if len(dshelf) == 0:
+        if not self.dshelf:
             input("No data yet\n"
-                  "[enter] main menu\n")
-            dshelf.close()
-            Run().main_menu()  # no data. back to main menu
+                  "[enter] Main Menu\n")
+            self.main_menu()
         i = input("Change all p a s s w o r d s  (make all new random)\n"
-                  "[enter] main menu\n"
+                  "[enter] Main Menu\n"
                   "Confirm by typing 'change all'\n")
-        if i.lower() == "change all":
-            for entry in dshelf:
+        if i == "change all":
+            for entry in self.dshelf:
                 print("\n" + entry)
                 new = self.generate_random()
                 print(new)
-                dshelf[entry][2] = new
-            dshelf.close()
+                self.dshelf[entry][2] = new
             input("Success\n"
-                  "[enter]...\n")  # main menu
-        elif i == "":  # escape to main menu
-            dshelf.close()
-            Run().main_menu()
-        else:  # bad input. try again
-            dshelf.close()
-            self.change_all()
+                  "[enter]...\n")
+        self.dshelf.close()  # done
 
     def delete_entry(self):
-        """ Delete entry by name from DATA.  Returns (None) to Main Menu """
-        dshelf = shelve.open(DATA, writeback=True)
-        if len(dshelf) == 0:
+        """ Delete entry by name from DATA """
+        if not self.dshelf:
             input("No data yet\n"
-                  "[enter] main menu\n")
-            dshelf.close()
-            Run().main_menu()  # no data. back to main menu
-        print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        print("Names:")
-        for e in sorted(dshelf):
-            print(e)  # display names
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-        i = input("[enter] main menu\n"
-                  "[name] entry to delete\n")
-        if i == "":
-            dshelf.close()
-            Run().main_menu()
-        elif i not in dshelf:
-            dshelf.close()
+                  "[enter] Main Menu\n")
+            self.main_menu()
+        self.__display_entries__()  # print names
+        i = input("[enter] Main Menu\n"
+                  "[name] Entry to delete\n")
+        if not i:
+            self.main_menu()
+        elif i not in self.dshelf:
             print("No entry for that name")
-            if input("[enter] main menu\n"
-                     "[t] try again\n") in ("t", "T"):
-                self.delete_entry()  # try again
+            if input("[enter] Main Menu\n"
+                     "[t] Try again\n") == "t":
+                self.delete_entry()  # Try again
         else:
-            deleted = False
             if input(f"Confirm delete '{i}'\n"
-                     f"[y] yes\n"
-                     f"[n] no\n").lower() in ("y", "yes"):
-                del dshelf[i]  # delete entry 'i' from dshelf
-                deleted = True
-            i = input("Deleted\n"
-                      "[enter] main menu\n"
-                      "[d] delete another\n") \
-                if deleted else \
-                input("Nothing deleted\n"
-                      "[enter] main menu\n"
-                      "[t] try again\n")
-            dshelf.close()
-            if i.lower() in ("d", "t"):
-                self.delete_entry()  # try again
+                     f"[y] Yes\n"
+                     f"[n] No\n") == "y":
+                del self.dshelf[i]  # delete entry 'i' from dshelf
+                i = input("Deleted\n"
+                          "[enter] Main Menu\n"
+                          "[d] Delete another\n")
+            else:
+                i = input("Nothing deleted\n"
+                          "[enter] Main Menu\n"
+                          "[t] Try again\n")
+            if i in ("d", "t"):
+                self.delete_entry()  # Try again
+        self.dshelf.close()  # done
+
+    def set_email(self, name):
+        self.dshelf[name][0] = self.__choose_email__()
+
+    def set_username(self, name):
+        self.dshelf[name][1] = self.__choose_username__()
 
     def edit_entry(self, name=None):
-        dshelf = shelve.open(DATA, writeback=True)
-        if len(dshelf) == 0:
+        if not self.dshelf:
             input("No data yet\n"
-                  "[enter] main menu\n")
-            dshelf.close()
-            Run().main_menu()  # no data. back to main menu
+                  "[enter] Main Menu\n")
+            self.main_menu()
         if name is None:  # also accept name as argument
-            print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            print("Names:")  # user chooses name
-            for key in sorted(dshelf):
-                print(key)  # display names alphabetically
-            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-            name = input("[enter] main menu\n"
-                         "[name] entry to edit\n")
-            if name == "":
-                dshelf.close()
-                Run().main_menu()  # escape to main menu
+            self.__display_entries__()
+            name = input("[enter] Main Menu\n"
+                         "[name] Entry to edit\n")
+            if not name:
+                self.main_menu()
         try:
+            data = self.dshelf[name]
             print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            Helpers.__display_data__(dshelf, name)  # display data for 'name'
+            Helpers.__display_data__(data, name)
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-            i = input("EDIT\n"
-                      "[e] email\n"
-                      "[u] username\n"
-                      "[p] p a s s w o r d\n"
-                      "[n] note\n"
-                      "[enter] done\n")
-            if i in ("e", "E"):
-                dshelf[name][0] = self.__choose_email__()  # edit email
-                input("Saved\n"
-                      "[enter]...\n")
-            elif i in ("u", "U"):  # edit username
-                dshelf[name][1] = self.__choose_username__()
-                input("Saved\n"
-                      "[enter]...\n")
-            elif i in ("p", "P"):
-                i, p = "", ""
-                i = input("[enter] none\n"
-                          "[r] random\n"
-                          "[m] manual\n")
-                if i in ("r", "R"):
-                    p = self.generate_random()  # random p.w.
-                elif i in ("m", "M"):
-                    p = self.__enter_pw__()  # manual p.w.
-                if i and p:
-                    dshelf[name][2] = p
-                    input("Saved\n"
-                          "[enter]...\n")
-                else:
-                    if input("\nblank p.w.? [y]es, [n]o: ") in ("y", "Y"):
-                        dshelf[name][2] = ""
-                        input("Saved\n"
-                              "[enter]...\n")
-                    else:
-                        input("Unchanged\n"
-                              "[enter]...\n")
-            elif i in ("n", "N"):
-                def add_note():
-                    """ add note on new line until [enter] is pressed """
-                    add = input("[enter] done\n"
-                                "[note]\n")
-                    return add + "\n" + add_note() if add else ""
-
-                notes = dshelf[name][3].split("\n")  # split lines into list
-                ln = len(notes)
-                for n in range(ln):
-                    print(n + 1, notes[n])
-                if ln > 1:
-                    while True:
-                        i = input("[enter] go back\n"
-                                  "[a] add note\n"
-                                  "[number] edit note\n")
-                        if i == "":
-                            dshelf.close()
-                            self.edit_entry()
-                        elif i in ("a", "A"):
-                            n = add_note().split("\n")
-                            notes += n  # append new line(s) to list
-                            dshelf[name][3] = "\n".join(notes)
-                            input("Saved\n"
-                                  "[enter]...\n")
-                            break
-                        try:  # try to edit note by line number
-                            i = int(i)
-                            assert i > 0
-                            notes[i - 1] = input("New line: ")
-                            dshelf[name][3] = "\n".join(notes)
-                            input("Saved\n"
-                                  "[enter]...\n")
-                            break
-                        except (IndexError, ValueError, AssertionError):
-                            pass
-                else:  # note is empty or one line
-                    i = "-"
-                    while i not in "aAeE":  # excludes [enter] ""
-                        i = input("[a] add note\n"
-                                  "[e] edit note\n")
-                        if i in ("a", "A"):
-                            dshelf[name][3] += add_note()
-                            input("Saved\n"
-                                  "[enter]...\n")
-                        elif i in ("e", "E"):
-                            n = add_note()
-                            dshelf[name][3] = n
-                            input("Saved\n"
-                                  "[enter]...\n")
-            else:
-                dshelf.close()
-                Run().main_menu()  # escape to main menu
-            dshelf.close()  # save and close shelf
-            self.edit_entry(name)  # edit same name (until escaped)
+            edits = {
+                "e": self.set_email,
+                "u": self.set_username,
+                "p": self.__edit_pw__,
+                "n": self.__edit_note__,
+                "": self.main_menu,
+            }
+            i = "dummy"
+            while i not in edits:
+                i = input("EDIT\n"
+                          "[e] Email\n"
+                          "[u] Username\n"
+                          "[p] P a s s w o r d\n"
+                          "[n] Note\n"
+                          "[enter] Done\n")
+            edits[i]()
+            input("Saved\n"
+                  "[enter]...\n")
+            self.edit_entry(name)  # edit name until [enter]
         except KeyError:
             i = input(f"No data for '{name}'\n"
-                      f"[enter] main menu\n"
-                      f"[t] try again\n")
-            dshelf.close()  # try new name
-            self.edit_entry() if i in ("t", "T") else Run().main_menu()
+                      f"[enter] Main Menu\n"
+                      f"[t] Try again\n")
+            self.edit_entry() if i == "t" else self.main_menu()
 
     def generate_random(self):
         """ Randomly generate a string of alphanumeric characters
@@ -397,51 +271,47 @@ class Write:
         return "".join(choice(characters) for _ in range(nchars))
 
     def get_entry(self):
-        dshelf = shelve.open(DATA)  # read only
-        if not dshelf:  # empty database
+        if not self.dshelf:  # empty database
             input("Database is empty\n"
                   "Make a new entry first\n"
                   "[enter]...\n")
-            dshelf.close()
-            Run().main_menu()  # to main menu
-        self.__display_entries__(dshelf)  # display entry names
+            self.main_menu()
+        self.__display_entries__()  # print names
         name = input("[enter] Main Menu\n"
                      "[name] Get entry\n")
         if not name:
-            dshelf.close()
-            Run().main_menu()  # to main menu
-        if name in dshelf:
-            Helpers.__display_data__(dshelf, name)  # display data for name
-        else:
-            print(f"'{name}' not found\n")
-        input("[enter]...\n")
-        dshelf.close()
-        self.get_entry()  # get another until [Main Menu]
-
-    @staticmethod
-    def get_entry_no_ui(name, quiet):
-        dshelf = shelve.open(DATA)  # read only
+            self.main_menu()
         try:
-            Helpers.__display_data__(dshelf, name, quiet)
+            data = self.dshelf[name]
         except KeyError:
-            print('not found')
+            print(f"{name} not found\n")
+        else:
+            Helpers.__display_data__(data, name)
         finally:
-            dshelf.close()
-            exit()
+            input("[enter]...\n")
+            self.get_entry()  # get another until [Main Menu]
 
-    def new_entry(self, rand=True):
+    def get_entry_no_ui(self, name, quiet):
+        try:
+            data = self.dshelf[name]
+        except KeyError:
+            print(f"{name} not found")
+        else:
+            Helpers.__display_data__(data, name, quiet)
+        finally:
+            self.dshelf.close()  # done
+
+    def new_entry(self):
         """ open or create DATA shelf and write data to it """
-        dshelf = shelve.open(DATA, writeback=True)
         name = input("[enter] Main Menu\n"
                      "[name] Entry\n")
         if not name:
-            dshelf.close()
-            Run().main_menu()
-        if name in dshelf:  # entry with 'name' already exists
-            data = dshelf[name]
+            self.main_menu()
+        if name in self.dshelf:  # entry with 'name' already exists
+            data = self.dshelf[name]
             if data:
                 print(f"\n {name} already exists")
-                Helpers().__display_data__(dshelf, name)
+                Helpers().__display_data__(data, name)
                 i = 'dummy'
                 while i not in ("", "t", "e", "r"):
                     i = input(f"[enter] Main Menu\n"
@@ -449,29 +319,78 @@ class Write:
                               f"[e] Edit {name}\n"
                               f"[r] Replace {name}'\n")
                 if not i:
-                    dshelf.close()
-                    Run().main_menu()  # main menu
+                    self.main_menu()
                 elif i == "t":
-                    dshelf.close()
-                    self.new_entry()  # try again
+                    self.new_entry()  # Try again
                 elif i == "e":
-                    dshelf.close()
                     self.edit_entry(name)  # edit
         # Write new entry
         # (name does not exist, is blank entry, or [Replace] selected)
-        dshelf[name] = dict(enumerate(self.__input_data__(dshelf, rand)))
-        Helpers().__display_data__(dshelf, name)
+        data = dict(enumerate(self.__input_data__()))
+        self.dshelf[name] = data
+        Helpers().__display_data__(data, name)
         input("Saved\n"
               "[enter]...\n")
-        dshelf.close()
+        self.dshelf.close()  # done
+
+    def new_random_entry(self):
+        self.random = True
+        self.new_entry()
+
+    def print_or_save_all(self):
+        alphabetical = sorted(self.dshelf)  # sorted list of names
+        if not self.dshelf:
+            input("No data yet\n"
+                  "[enter] Main Menu\n")
+            self.main_menu()
+        for name in alphabetical:
+            data = self.dshelf[name]  # data is itself a dictionary object
+            Helpers().__display_data__(data, name)
+        i = "dummy"
+        while i not in ("", "s"):
+            i = input("\n[enter] Main Menu\n"
+                      "[s] Save all data to plain text file (not recommended!)")
+        if i == "s":  # save data to file
+            newpath = input(f"[enter] Save to {SAVE}\n"
+                            f"[filepath] Save here\n")
+            filepath = newpath if newpath else SAVE  # use default filepath
+            # unless one is given by user
+            mode = "dummy"
+            while mode not in ("", "w", "a"):
+                mode = input(f"[enter] Cancel\n"
+                             f"[w] Write {SAVE} (overwrite if it exists)\n"
+                             f"[a] Append {SAVE}\n")
+            if not mode:
+                self.print_or_save_all()  # go back (Try again)
+            with open(filepath, mode) as f:  # save data to file f
+                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", file=f)
+                for name in alphabetical:  # iterate (sorted) names
+                    print(name, file=f)  # print 'name' to file
+                    data = self.dshelf[name]
+                    for key in range(len(data)):  # iterate fields (keys)
+                        if data[key]:  # if data in field
+                            print(data[key], file=f)  # print to file
+                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", file=f)
+            print(f"{SAVE} {'written' if mode == 'w' else 'appended'}")
+            input("[enter]...\n")
+        self.dshelf.close()  # done
+
+    def print_random(self):
+        print(self.generate_random())
+
+    def add_note(self):
+        """ add note on new line until [enter] is pressed """
+        add_line = input("[enter] Done\n"
+                         "[note]\n")
+        return f"{add_line}\n{self.add_note()}" if add_line else ""
 
     def __choose_email__(self):
         Helpers().__display_list__(self.emails, "emails")
-        print("[enter] default\n"
-              "[*] other\n"
-              "[number] select\n"),
+        print("[enter] Default\n"
+              "[*] Other\n"
+              "[number] Select\n"),
         i = Helpers().__valid_number__(self.emails)
-        if i == "":  # default email (if exists)
+        if not i:  # default email (if exists)
             return self.emails[1] if len(self.emails) > 1 else ""
         elif i == "*":  # other
             # First input email and save it to OPTIONS
@@ -486,11 +405,11 @@ class Write:
 
     def __choose_username__(self):
         Helpers().__display_list__(self.usernames, "usernames")
-        print("[enter] default\n"
-              "[*] other\n"
-              "[number] select\n")
+        print("[enter] Default\n"
+              "[*] Other\n"
+              "[number] Select\n")
         i = Helpers().__valid_number__(self.usernames)
-        if i == "":  # default username (if exists)
+        if not i:  # default username (if exists)
             return self.usernames[1] if len(self.usernames) > 1 else ""
         elif i == "*":  # other
             # First add the username and save it to OPTIONS
@@ -505,52 +424,113 @@ class Write:
             return self.usernames[i]  # select username
 
     # todo print names in columns
-    @staticmethod
-    def __display_entries__(dshelf):
+    def __display_entries__(self):
         print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         print("Names:")
-        for key in sorted(dshelf):
+        for key in sorted(self.dshelf):
             print(key)  # display names
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
 
+    def __edit_note__(self, name):
+        note = self.dshelf[name][3].split("\n")  # split lines into list
+        for line in enumerate(note):
+            print(line)
+        if note:
+            while True:
+                i = input("[enter] Go back\n"
+                          "[a] Add note\n"
+                          "[number] Edit note\n")
+                if not i:
+                    self.edit_entry()
+                elif i == "a":
+                    self.dshelf[name][3] = "\n".join(self.__write_note__(note))
+                    input("Saved\n"
+                          "[enter]...\n")
+                    break
+                try:  # try to edit note by line number
+                    i = int(i)
+                    assert i > 0
+                    note[i - 1] = input("New line: ")
+                    self.dshelf[name][3] = "\n".join(note)
+                    input("Saved\n"
+                          "[enter]...\n")
+                    break
+                except (IndexError, ValueError, AssertionError):
+                    pass
+        else:  # note is empty or one line
+            i = "-"
+            while i not in ("a", "e"):
+                i = input("[a] Add note\n"
+                          "[e] Edit note\n")
+                if i == "a":
+                    self.dshelf[name][3] += self.add_note()
+                    input("Saved\n"
+                          "[enter]...\n")
+                elif i == "e":
+                    n = self.add_note()
+                    self.dshelf[name][3] = n
+                    input("Saved\n"
+                          "[enter]...\n")
+
+    def __edit_pw__(self, name):
+        i, p = "", ""
+        i = input("[enter] None\n"
+                  "[r] Random\n"
+                  "[m] Manual\n")
+        if i == "r":
+            p = self.generate_random()  # random p.w.
+        elif i == "m":
+            p = self.__enter_pw__()  # manual p.w.
+        if i and p:
+            self.dshelf[name][2] = p
+            input("Saved\n"
+                  "[enter]...\n")
+        else:
+            if input("\nblank p.w.? [y]es, [n]o: ") == "y":
+                self.dshelf[name][2] = ""
+                input("Saved\n"
+                      "[enter]...\n")
+            else:
+                input("Unchanged\n"
+                      "[enter]...\n")
+
     def __enter_pw__(self):
         p, p1 = "", ""
-        while p == "":
+        while not p:
             p = input("Input p a s s w o r d\n")
-        while p1 == "":
+        while not p1:
             p1 = input("Input again to confirm\n")
         if p == p1:
             return p  # match confirmed
         else:
             if input("P a s s w o r d s did not match\n"
-                     "[enter] cancel\n"
-                     "[t] try again\n") in ("t", "T"):
-                return self.__enter_pw__()  # try again
+                     "[enter] Cancel\n"
+                     "[t] Try again\n") == "t":
+                return self.__enter_pw__()  # Try again
             return None  # cancel
 
-    def __input_data__(self, dshelf, rand=True):
+    def __input_data__(self):
         return self.__choose_email__(), self.__choose_username__(), \
-               self.__write_pw__(dshelf, rand), self.__write_notes__([])
+               self.__write_pw__(), self.__write_note__([])
 
-    def __write_notes__(self, result):
+    def __write_note__(self, note):
         """ add note on new line until [enter] is pressed """
-        add = input("[enter] done\n"
-                    "[note]\n")
-        if add:
-            result.append(add)
-            self.__write_notes__(result)
-        return "\n".join(result)
+        line = input("[enter] Done\n"
+                     "[note]\n")
+        if line:
+            note.append(line)
+            self.__write_note__(note)
+        return "\n".join(note)
 
-    def __write_pw__(self, dshelf, rand=True):
-        if rand:
+    def __write_pw__(self):
+        if self.random:
             return self.generate_random()  # random
         else:
             m = self.__enter_pw__()  # manual
             if m:
                 return m
             else:
-                dshelf.close()
-                Run().main_menu()  # cancelled. back to main menu
+                self.main_menu()
 
 
 class Options:
@@ -561,9 +541,9 @@ class Options:
         self.length = run.__get_length__()
         self.lrange = run.__get_range__()
         self.punctuation = run.__get_punctuation__()
+        self.oshelf = shelve.open(OPTIONS, writeback=True)
 
     def options_menu(self):
-        oshelf = shelve.open(OPTIONS, writeback=True)  # edit OPTIONS shelf
         print("\n~~~~~~~~~~~~~~~\n"
               "    OPTIONS\n"
               "~~~~~~~~~~~~~~~\n"
@@ -576,299 +556,303 @@ class Options:
               "[6] Main Menu\n"
               "[7] Quit\n"
               "~~~~~~~~~~~~~~~\n")
-        option = input()
-        if option == "1":
-            self.email_options(oshelf)  # Emails
-        elif option == "2":
-            self.username_options(oshelf)  # Usernames
-        elif option == "3":
-            self.length_options(oshelf)  # Length
-        elif option == "4":
-            self.range_options(oshelf)  # Range
-        elif option == "5":
-            self.punctuation_options(oshelf)  # Punctuation
-        elif option == "6":
-            oshelf.close()
-            Run().main_menu()  # Main menu
-        elif option == "7":
-            oshelf.close()
-            Run().goodbye()  # Quit
-        oshelf.close()  # always close OPTIONS shelf
+        options = {
+            "1": self.email_options,
+            "2": self.username_options,
+            "3": self.length_options,
+            "4": self.range_options,
+            "5": self.punctuation_options,
+            "6": self.main_menu,
+            "7": self.quit
+        }
+        i = "dummy"
+        while i not in options:
+            i = input()
+        options[i]()
         self.options_menu()  # always runOptions until [Main Menu] or [Quit]
 
-    def email_options(self, oshelf):
+    def email_options(self):
         Helpers().__display_list__(self.emails, "emails")
-        option = input("[enter] back to options\n"
-                       "[a] add\n"
-                       "[d] delete\n"
-                       "[e] edit\n"
-                       "[s] set default\n")
-        if option == "":
-            oshelf.close()  # escape to option menu
-            self.options_menu()
-        elif option in ("a", "A"):  # add email
-            self.__add_email__(oshelf)
-        elif option in ("d", "D"):  # delete email
-            self.__del_email__(oshelf)
-        elif option in ("e", "E"):  # edit email
-            self.__edit_email__(oshelf)
-        elif option in ("s", "S"):
-            self.__default_email__(oshelf)  # set default email
-        self.email_options(oshelf)  # loop email options until escaped
+        options = {
+            "": self.options_menu,
+            "a": self.__add_email__,
+            "d": self.__del_email__,
+            "e": self.__edit_email__,
+            "s": self.__default_email__,
+        }
+        i = "dummy"
+        while i not in options:
+            i = input("[enter] Options menu\n"
+                      "[a] Add\n"
+                      "[d] Delete\n"
+                      "[e] Edit\n"
+                      "[s] Set default\n")
+        options[i]()
+        self.email_options()  # loop email options until [enter]
 
-    def username_options(self, oshelf):
+    def username_options(self):
         Helpers().__display_list__(self.usernames, "usernames")
-        option = input("[enter] options menu\n"
-                       "[a] add\n"
-                       "[d] delete\n"
-                       "[e] edit\n"
-                       "[s] set default\n")
-        if option == "":
-            oshelf.close()  # escape to option menu
-            self.options_menu()
-        elif option in ("a", "A"):  # add username
-            self.__add_username__(oshelf)
-        elif option in ("d", "D"):  # delete username
-            self.__del_username__(oshelf)
-        elif option in ("e", "E"):  # edit username
-            self.__edit_username__(oshelf)
-        elif option in ("s", "S"):
-            self.__default_username__(oshelf)  # set default username
-        self.username_options(oshelf)  # loop username options until escaped
+        options = {
+            "": self.options_menu,
+            "a": self.__add_username__,
+            "d": self.__del_username__,
+            "e": self.__edit_username__,
+            "s": self.__default_username__,
+        }
+        i = "dummy"
+        while i not in options:
+            i = input("[enter] Options menu\n"
+                      "[a] Add\n"
+                      "[d] Delete\n"
+                      "[e] Edit\n"
+                      "[s] Set default\n")
+        options[i]()
+        self.username_options()  # loop username options until [enter]
 
-    def length_options(self, oshelf):
+    def length_options(self):
         print(f"\nCurrent length is {self.length} characters")
-        ln = input("[enter] options menu\n"
+        ln = input("[enter] Options menu\n"
                    "[length]\n")
         if ln != "":  # not [enter] ("")
             try:
                 ln = int(ln)
                 assert ln > 0
                 self.length = ln
-                oshelf["length"] = ln
+                self.oshelf["length"] = ln
                 print(f"Length set to {ln} characters")
-            except (ValueError, AssertionError):  # bad input try again
+            except (ValueError, AssertionError):  # bad input Try again
                 print("Length must be a positive integer")
-                self.length_options(oshelf)
+                self.length_options()
 
-    def range_options(self, oshelf):
+    def range_options(self):
         print(f"\nRange to randomize p.w. length\n"
               f"\tE.g. range 2 and length 15\n"
               f"\trandomizes p.w. length between 13 to 17 characters\n"
               f"Current range is {self.lrange}")
         try:
-            r = input("[enter] options menu\n"
+            r = input("[enter] Options menu\n"
                       "Set range\n")
             if r != "":  # not [enter] ("")
                 r = int(r)
                 assert r >= 0
                 self.lrange = r
-                oshelf["lrange"] = r
+                self.oshelf["lrange"] = r
                 print(f"Range set to +/- {r} characters")
-        except (ValueError, AssertionError):  # bad input try again
+        except (ValueError, AssertionError):  # bad input Try again
             print("Range must be a non-negative integer")
-            self.range_options(oshelf)
+            self.range_options()
 
-    def punctuation_options(self, oshelf):
+    def punctuation_options(self):
         print(f"\nCurrent punctuation is {self.punctuation}")
         print("""
-        [enter] options menu
-        [a] all !#$%&()*+,-./:;<=>?@[]^_{|}~
-        [s] some %+-./:=@_
-        [l] limited @._-
-        [n] none
+        [enter] Options menu
+        [a] All !#$%&()*+,-./:;<=>?@[]^_{|}~
+        [s] Some %+-./:=@_
+        [l] Limited @._-
+        [n] None
         """)
         pn = {"a": "all", "s": "some", "l": "limited", "n": "none"}
         i = "input string"
-        while (len(i) > 0) and (i not in pn):
-            i = input().lower()  # loop if bad input
+        while i and (i not in pn):
+            i = input()  # loop if bad input
             if i in pn:
                 self.punctuation = pn[i]
-                oshelf["punctuation"] = self.punctuation
+                self.oshelf["punctuation"] = self.punctuation
                 print(f"Punctuation set to {self.punctuation}")
 
-    def __add_email__(self, oshelf):
-        ok, e = Helpers().__add_entry__(self.emails, oshelf, "emails")
+    def main_menu(self):
+        self.oshelf.close()
+        Run().main_menu()
+
+    def quit(self):
+        self.oshelf.close()
+        Run().goodbye()
+
+    def __add_email__(self):
+        ok, e = Helpers().__add_entry__(self.emails, self.oshelf, "emails")
         Helpers().__display_list__(self.emails, "emails")
-        i = input("Saved\n"
-                  "[enter] email options\n"
-                  "[a] add another\n") \
-            if ok else input(f"Already have '{e}' saved\n"
-                             f"[enter] email options\n"
-                             f"[t] try again\n")
-        if i.lower() in ("a", "t"):
-            self.__add_email__(oshelf)  # add another/try again
+        if ok:
+            i = input("Saved\n"
+                      "[enter] Email options\n"
+                      "[a] Add another\n")
+        else:
+            i = input(f"Already have '{e}' saved\n"
+                      f"[enter] Email options\n"
+                      f"[t] Try again\n")
+        if i in ("a", "t"):
+            self.__add_email__()  # Add another/Try again
 
-    def __add_username__(self, oshelf):
-        ok, u = Helpers().__add_entry__(self.usernames, oshelf, "usernames")
+    def __add_username__(self):
+        ok, u = Helpers().__add_entry__(
+            self.usernames, self.oshelf, "usernames")
         Helpers().__display_list__(self.usernames, "usernames")
-        i = input("Saved\n"
-                  "[enter] username options\n"
-                  "[a] add another\n") \
-            if ok else input(f"Already have '{u}' saved\n"
-                             f"[enter] username options\n"
-                             f"[t] try again\n")
-        if i.lower() in ("a", "t"):
-            self.__add_username__(oshelf)  # add another/try again
+        if ok:
+            i = input("Saved\n"
+                      "[enter] Username options\n"
+                      "[a] Add another\n")
+        else:
+            i = input(f"Already have '{u}' saved\n"
+                      f"[enter] Username options\n"
+                      f"[t] Try again\n")
+        if i in ("a", "t"):
+            self.__add_username__()  # add another/Try again
 
-    def __del_email__(self, oshelf):
+    def __default_email__(self):
+        if len(self.emails) == 1:
+            input("Add an email first\n"
+                  "[enter] Go back\n")
+            self.email_options()  # back to email options
+        print("[enter] Email options\n"
+              "[number] Set default email")
+        number = Helpers().__valid_number__(self.emails)
+        if number == 0:
+            if input("Cannot set 'no email' as default\n"
+                     "[enter] Email options\n"
+                     "[t] Try again\n") == "t":
+                self.__default_email__()  # Try again
+        elif number in ("", "*"):
+            self.email_options()  # back to email options
+        else:
+            d = self.emails.pop(number)  # remove from list, assign to 'd'
+            temp = [self.emails[0], d] + self.emails[1:]  # put back as [1]
+            self.emails = temp
+            self.oshelf["emails"] = temp
+            input(f"'{d}' Saved as default\n"
+                  f"[enter]...\n")
+        self.email_options()
+
+    def __default_username__(self):
+        if len(self.usernames) == 1:
+            input("Add a username first\n"
+                  "[enter] Go back...\n")
+            self.username_options()  # back to username options
+        print("[enter] Username options\n"
+              "[number] Set default username\n")
+        number = Helpers().__valid_number__(self.usernames)
+        if number == 0:
+            if input("Cannot set 'no username' as default\n"
+                     "[enter] Username options\n"
+                     "[t] Try again\n") == "t":
+                self.__default_username__()  # Try again
+        elif number in ("", "*"):
+            self.username_options()  # back to username options
+        else:
+            d = self.usernames.pop(number)  # remove from list, assign to 'd'
+            temp = [self.usernames[0], d] + self.usernames[1:]  # user[1]
+            self.usernames = temp
+            self.oshelf["usernames"] = temp
+            input(f"'{d}' Saved as default\n"
+                  f"[enter]...\n")
+
+    def __del_email__(self):
         if len(self.emails) == 1:
             input("No emails to delete\n"
                   "[enter]...\n")
-            self.email_options(oshelf)  # back to email options
-        print("[enter] email options\n"
-              "[number] remove email"),
+            self.email_options()  # back to email options
+        print("[enter] Email options\n"
+              "[number] Remove email"),
         number = Helpers().__valid_number__(self.emails)
         if number == 0:
             if input("Cannot delete 'no email'\n"
-                     "[enter] email options\n"
-                     "[t] try again\n") in ("t", "T"):
-                self.__del_email__(oshelf)  # try again
+                     "[enter] Email options\n"
+                     "[t] Try again\n") == "t":
+                self.__del_email__()  # Try again
         elif number not in ("", "*"):
             email = self.emails[number]  # number is valid
             if input(f"Remove {email} ?\n"
-                     f"[y] yes\n"
-                     f"[n] no\n").lower() in ("y", "yes"):
+                     f"[y] Yes\n"
+                     f"[n] No\n") == "y":
                 temp = self.emails[:]
                 temp.pop(number)
                 self.emails = temp
-                oshelf["emails"] = temp
+                self.oshelf["emails"] = temp
                 input(f"'{email}' deleted\n"
                       f"[enter]...\n")
             else:  # abort remove
                 input("Nothing deleted\n"
                       "[enter]...\n")
 
-    def __del_username__(self, oshelf):
+    def __del_username__(self):
         if len(self.emails) == 1:
             input("No usernames to delete\n"
                   "[enter]...\n")
-            self.username_options(oshelf)  # back to username options
-        print("[enter] username options\n"
-              "[number] remove username"),
+            self.username_options()  # back to username options
+        print("[enter] Username options\n"
+              "[number] Remove username"),
         number = Helpers().__valid_number__(self.usernames)
         if number == 0:
             if input("Cannot delete 'no username'\n"
-                     "[enter] username options\n"
-                     "[t] try again\n") \
-                    in ("t", "T"):
-                self.__del_username__(oshelf)  # try again
+                     "[enter] Username options\n"
+                     "[t] Try again\n") \
+                    == "t":
+                self.__del_username__()  # Try again
         elif number not in ("", "*"):
             username = self.usernames[number]  # number is valid
             if input(f"Remove {username} ?\n"
-                     f"[y] yes\n"
-                     f"[n] no\n").lower() in ("y", "yes"):
+                     f"[y] Yes\n"
+                     f"[n] No\n") == "y":
                 temp = self.usernames[:]
                 temp.pop(number)
                 self.usernames = temp
-                oshelf["usernames"] = temp
+                self.oshelf["usernames"] = temp
                 input(f"'{username}' deleted\n"
                       f"[enter]...\n")
             else:  # abort remove
                 input("Nothing deleted\n"
                       "[enter]...\n")
 
-    def __edit_email__(self, oshelf):
+    def __edit_email__(self):
         if len(self.emails) == 1:
             input("No emails to edit\n"
-                  "[enter] email options\n")
-            self.email_options(oshelf)  # options
-        print("[enter] email options\n"
-              "[number] edit email\n")
-        if self.__edit_list__(self.emails, oshelf, "emails"):
+                  "[enter] Email options\n")
+            self.email_options()  # options
+        print("[enter] Email options\n"
+              "[number] Edit email\n")
+        if self.__edit_list__(self.emails, "emails"):
             Helpers().__display_list__(self.emails, "emails")
-            i = input("[enter] email options\n"
-                      "[e] edit another\n")
+            i = input("[enter] Email options\n"
+                      "[e] Edit another\n")
         else:
-            i = input("[enter] email options\n"
-                      "[t] try again\n")
-        if i.lower() in ("e", "t"):  # edit another/try again
-            self.__edit_email__(oshelf)
+            i = input("[enter] Email options\n"
+                      "[t] Try again\n")
+        if i in ("e", "t"):  # edit another/Try again
+            self.__edit_email__()
 
-    def __edit_username__(self, oshelf):
-        if len(self.emails) == 1:
-            input("No usernames to edit\n"
-                  "[enter]...\n")
-            return  # options
-        print("[enter] options menu\n"
-              "[number] edit username\n")
-        if self.__edit_list__(self.usernames, oshelf, "usernames"):
-            Helpers().__display_list__(self.usernames, "usernames")
-            i = input("[enter] username options\n"
-                      "[e] edit another\n")
-        else:
-            i = input("[enter] username options\n"
-                      "[t] try again\n")
-        if i.lower() in ("e", "t"):  # edit another/try again
-            self.__edit_username__(oshelf)
-
-    def __default_email__(self, oshelf):
-        if len(self.emails) == 1:
-            input("Add an email first\n"
-                  "[enter] go back\n")
-            self.email_options(oshelf)  # back to email options
-        print("[enter] email options\n"
-              "[number] set default email")
-        number = Helpers().__valid_number__(self.emails)
-        if number == 0:
-            if input("Cannot set 'no email' as default\n"
-                     "[enter] email options\n"
-                     "[t] try again\n") \
-                    in ("t", "T"):
-                self.__default_email__(oshelf)  # try again
-        elif number in ("", "*"):
-            self.email_options(oshelf)  # back to email options
-        else:
-            d = self.emails.pop(number)  # remove from list, assign to 'd'
-            temp = [self.emails[0], d] + self.emails[1:]  # put back as [1]
-            self.emails = temp
-            oshelf["emails"] = temp
-            input(f"'{d}' Saved as default\n"
-                  f"[enter]...\n")
-        self.email_options(oshelf)
-
-    def __default_username__(self, oshelf):
-        if len(self.usernames) == 1:
-            input("Add a username first\n"
-                  "[enter] go back...\n")
-            self.username_options(oshelf)  # back to username options
-        print("[enter] username options\n"
-              "[number] set default username\n")
-        number = Helpers().__valid_number__(self.usernames)
-        if number == 0:
-            if input("Cannot set 'no username' as default\n"
-                     "[enter] username options\n"
-                     "[t] try again\n") \
-                    in ("t", "T"):
-                self.__default_username__(oshelf)  # try again
-        elif number in ("", "*"):
-            self.username_options(oshelf)  # back to username options
-        else:
-            d = self.usernames.pop(number)  # remove from list, assign to 'd'
-            temp = [self.usernames[0], d] + self.usernames[1:]  # user[1]
-            self.usernames = temp
-            oshelf["usernames"] = temp
-            input(f"'{d}' Saved as default\n"
-                  f"[enter]...\n")
-
-    def __edit_list__(self, mylist, oshelf, key):
+    def __edit_list__(self, mylist, key):
         ind = Helpers().__valid_number__(mylist)
-        if ind == "":
+        if not ind:
             if key == "emails":
-                self.email_options(oshelf)
+                self.email_options()
             elif key == "usernames":
-                self.username_options(oshelf)
+                self.username_options()
         elif ind == 0:
-            print("0 is no username")
+            print(f"0 is no {key}")
             return False
         entry = input("Email:\n") if key == "emails" else input("Username:\n")
         if entry in mylist:
             print(f"Already have {entry} saved")
             return False
         mylist[ind] = entry
-        oshelf[key][ind] = entry
+        self.oshelf[key][ind] = entry
         Helpers().__display_list__(mylist, key)
         return True
+
+    def __edit_username__(self):
+        if len(self.emails) == 1:
+            input("No usernames to edit\n"
+                  "[enter]...\n")
+            return  # options
+        print("[enter] Options menu\n"
+              "[number] Edit username\n")
+        if self.__edit_list__(self.usernames, "usernames"):
+            Helpers().__display_list__(self.usernames, "usernames")
+            i = input("[enter] Username options\n"
+                      "[e] Edit another\n")
+        else:
+            i = input("[enter] Username options\n"
+                      "[t] Try again\n")
+        if i in ("e", "t"):  # edit another/Try again
+            self.__edit_username__()
 
 
 class Helpers:
@@ -886,7 +870,7 @@ class Helpers:
             return self.__valid_number__(mylist)
 
     @staticmethod
-    def __add_entry__(mylist, oshelf, key):
+    def __add_entry__(mylist, key, oshelf):
         entry = ""
         if key == "emails":
             entry = input("Email:\n")
@@ -899,9 +883,9 @@ class Helpers:
         return False, entry
 
     @staticmethod
-    def __display_list__(mylist, title):
+    def __display_list__(mylist, key):
         print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        print(title + ":")
+        print(key + ":")
         for n in range(len(mylist)):
             if n == 0:
                 print(n, "none")
@@ -912,8 +896,7 @@ class Helpers:
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
 
     @staticmethod
-    def __display_data__(dshelf, name, quiet=False):
-        data = dshelf[name]  # data is itself a dictionary object
+    def __display_data__(data, name, quiet=False):
         if quiet:
             try:
                 # sys.stdout.write(data[2])
