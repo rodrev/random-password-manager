@@ -15,53 +15,118 @@ DATA = ABS + "/dat"  # save data here (bytes)
 SAVE = ABS + "/txt"  # save data here with 'Save all' feature (text)
 
 
-class Run:
+class Options:
+    # default options
+    emails = [""]
+    usernames = [""]
+    length = 40
+    lrange = 0
+    punctuation = "limited"
+    punctuation_choices = {
+        "all": "!#$%&()*+,-./:;<=>?@[]^_{|}~",
+        "some": "%+-./:=@_",
+        "limited": "@._-",
+        "none": ""
+    }
+    lower = True
+    upper = True
+    numbers = True
+
+    def __init__(self, oshelf, interactive=True):
+        if oshelf:  # get options from shelf
+            self.emails = oshelf["emails"]
+            self.usernames = oshelf["usernames"]
+            self.length = oshelf["length"]
+            self.lrange = oshelf["lrange"]
+            self.punctuation = oshelf["punctuation"]
+            self.lower = oshelf["lower"]
+            self.upper = oshelf["upper"]
+            self.numbers = oshelf["numbers"]
+        else:  # empty shelf (first run)
+            print(f"{OPTIONS} file created with default options\n"
+                  "Select [options] to customize\n")
+            # save default options to shelf
+            oshelf["emails"] = self.emails
+            oshelf["usernames"] = self.usernames
+            oshelf["length"] = self.length
+            oshelf["lrange"] = self.lrange
+            oshelf["punctuation"] = self.punctuation
+            oshelf["lower"] = self.lower
+            oshelf["upper"] = self.upper
+            oshelf["numbers"] = self.numbers
+
+        if interactive:
+            print("Current Options:")
+            print("emails:")
+            for email in self.emails:
+                print(email)
+            print("usernames:")
+            for username in self.usernames:
+                print(username)
+            print("length", self.length)
+            print("lrange", self.lrange)
+            print("punctuation", self.punctuation_type,
+                  self.punctuation_choices[self.punctuation_type])
+            print("lowercase", self.lowercase)
+            print("uppercase", self.uppercase)
+            print("numbers", self.numbers)
+
+    # ~~ Setters and getters ~~
+    # todo: integrate setters and getters
+    def get_emails(self):
+        return self.emails
+
+    def get_length(self):
+        return self.length
+
+    def get_punctuation(self):
+        return self.punctuation
+
+    def get_range(self):
+        return self.lrange
+
+    def get_usernames(self):
+        return self.usernames
+
+    def set_emails(self, e):
+        self.emails = e
+
+    def set_length(self, l):
+        self.length = l
+
+    def set_punctuation(self, p):
+        self.punctuation = p
+
+    def set_range(self, r):
+        self.lrange = r
+
+    def set_usernames(self, u):
+        self.usernames = u
+
+
+class Data:
+    def __init__(self, dshelf):
+        pass
+
+
+class MainMenu:
     def __init__(self):
-        emails, usernames = [""], [""]  # defaults
-        length, lrange, punctuation = 40, 0, "all"  # defaults
-        if os.path.isfile(OPTIONS):  # OPTIONS file found
-            oshelf = shelve.open(OPTIONS, writeback=True)  # options shelf
-            try:  # get settings from OPTIONS file
-                emails = oshelf["emails"]
-                usernames = oshelf["usernames"]
-                length = oshelf["length"]
-                lrange = oshelf["lrange"]
-                punctuation = oshelf["punctuation"]
-                oshelf.close()
-            except KeyError:
-                print(f"Options file {OPTIONS} corrupted\n"
-                      f"Delete it and run again to make a new one")
-                oshelf.close()
-                exit(1)
-        else:  # OPTIONS not found, set defaults
-            print("~~~~~ Welcome to Random P a s s w o r d  Manager ~~~~~\n"
-                  f"{OPTIONS} file created with default options\n"
-                  "Select [options] from menu to customize\n")
-            # Create OPTIONS file to shelve defaults
-            # oshelf {Strings (keys) : Any object (values)}
-            oshelf = shelve.open(OPTIONS, writeback=True)
-            oshelf["emails"] = emails
-            oshelf["usernames"] = usernames
-            oshelf["length"] = length
-            oshelf["lrange"] = lrange
-            oshelf["punctuation"] = punctuation
-            oshelf.close()
-        # Initialize defaults if OPTIONS file not found
-        # Otherwise, initialize from OPTIONS file
-        self.emails = emails
-        self.usernames = usernames
-        self.length = length
-        self.lrange = lrange
-        self.punctuation = punctuation
-
-    @staticmethod
-    def goodbye():
-        print("\nGoodbye\n")
-        exit()
-
-    def main_menu(self):
         """ INTERACTIVE MODE """
-        print("""
+        menu = {
+            "1": Write().new_random_entry,
+            "2": Write().new_entry,
+            "3": Write().print_random,
+            "4": Write().get_entry,
+            "5": Write().edit_entry,
+            "6": Write().delete_entry,
+            "7": Write().print_or_save_all,
+            "8": Write().change_all,
+            "9": OptionsUI().options_menu,
+            "0": self.quit
+        }
+        i = 'dummy'
+        while i != "0":  # loop until [quit]
+            print("""
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RANDOM  P A S S W O R D  MANAGER
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -80,86 +145,34 @@ class Run:
     [0] Quit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """)
-        menu = {
-            "1": Write().new_random_entry,
-            "2": Write().new_entry,
-            "3": Write().print_random,
-            "4": Write().get_entry,
-            "5": Write().edit_entry,
-            "6": Write().delete_entry,
-            "7": Write().print_or_save_all,
-            "8": Write().change_all,
-            "9": Options().options_menu,
-            "0": self.goodbye
-        }
-        i = 'dummy'
-        while i not in menu:
-            i = input()
-        menu[i]()
-        input("[enter]...\n")  # pause
-        self.main_menu()  # loop Main Menu until [Quit]
+            while i not in menu:  # ensure valid choice
+                i = input()
+            menu[i]()
+            input("[enter]...\n")  # pause
 
     @staticmethod
-    def no_ui(name):
+    def quit():
+        print("\nGoodbye\n")
+
+
+class NoUI:
+    def __init__(self, name):
         """ NON-INTERACTIVE MODE """
         if name[0] in ("-q", "--quiet"):
             Write().get_entry_no_ui(name=" ".join(name[1:]), quiet=True)
         else:
             Write().get_entry_no_ui(name=" ".join(name), quiet=False)
 
-    # ~~ Setters and getters ~~
-    # todo: integrate setters and getters
-    def __get_emails__(self):
-        return self.emails
-
-    def __get_length__(self):
-        return self.length
-
-    def __get_punctuation__(self):
-        return self.punctuation
-
-    def __get_range__(self):
-        return self.lrange
-
-    def __get_usernames__(self):
-        return self.usernames
-
-    def __set_emails__(self, e):
-        self.emails = e
-
-    def __set_length__(self, l):
-        self.length = l
-
-    def __set_punctuation__(self, p):
-        self.punctuation = p
-
-    def __set_range__(self, r):
-        self.lrange = r
-
-    def __set_usernames__(self, u):
-        self.usernames = u
-
 
 class Write:
     def __init__(self):
-        self.run = Run()
-        self.emails = self.run.__get_emails__()
-        self.usernames = self.run.__get_usernames__()
-        self.length = self.run.__get_length__()
-        self.lrange = self.run.__get_range__()
-        self.punctuation = self.run.__get_punctuation__()
         self.random = False
-        self.dshelf = shelve.open(DATA, writeback=True)
-
-    def main_menu(self):
-        self.dshelf.close()
-        self.run.main_menu()
 
     def change_all(self):
         if not self.dshelf:
             input("No data yet\n"
                   "[enter] Main Menu\n")
-            self.main_menu()
+            MainMenu()
         i = input("Change all p a s s w o r d s  (make all new random)\n"
                   "[enter] Main Menu\n"
                   "Confirm by typing 'change all'\n")
@@ -171,19 +184,18 @@ class Write:
                 self.dshelf[entry][2] = new
             input("Success\n"
                   "[enter]...\n")
-        self.dshelf.close()  # done
 
     def delete_entry(self):
         """ Delete entry by name from DATA """
         if not self.dshelf:
             input("No data yet\n"
                   "[enter] Main Menu\n")
-            self.main_menu()
+            MainMenu()
         self.__display_entries__()  # print names
         i = input("[enter] Main Menu\n"
                   "[name] Entry to delete\n")
         if not i:
-            self.main_menu()
+            MainMenu()
         elif i not in self.dshelf:
             print("No entry for that name")
             if input("[enter] Main Menu\n"
@@ -203,7 +215,6 @@ class Write:
                           "[t] Try again\n")
             if i in ("d", "t"):
                 self.delete_entry()  # Try again
-        self.dshelf.close()  # done
 
     def set_email(self, name):
         self.dshelf[name][0] = self.__choose_email__()
@@ -215,13 +226,13 @@ class Write:
         if not self.dshelf:
             input("No data yet\n"
                   "[enter] Main Menu\n")
-            self.main_menu()
+            MainMenu()
         if name is None:  # also accept name as argument
             self.__display_entries__()
             name = input("[enter] Main Menu\n"
                          "[name] Entry to edit\n")
             if not name:
-                self.main_menu()
+                MainMenu()
         try:
             data = self.dshelf[name]
             print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
@@ -250,24 +261,19 @@ class Write:
             i = input(f"No data for '{name}'\n"
                       f"[enter] Main Menu\n"
                       f"[t] Try again\n")
-            self.edit_entry() if i == "t" else self.main_menu()
+            self.edit_entry() if i == "t" else MainMenu()
 
     def generate_random(self):
         """ Randomly generate a string of alphanumeric characters
             and (if True) punctuation. Length of string is determined by
             self.length. If self.lrange is non-zero, then self.length is
             randomly adjusted +/- some value within self.lrange """
-        punctuation_marks = {
-            "all": "!#$%&()*+,-./:;<=>?@[]^_{|}~",
-            "some": "%+-./:=@_",
-            "limited": "@._-",
-            "none": ""
-        }
-        characters = "abcdefghijklmnopqrstuvwxyz" \
-                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
-                     "1234567890" + punctuation_marks[self.punctuation]
-        nchars = self.length + randint(-self.lrange, self.lrange) \
-            if self.lrange > 0 else self.length
+        lowercase = "abcdefghijklmnopqrstuvwxyz" if Options.lowercase else ""
+        uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" if Options.uppercase else ""
+        numbers = "0123456789" if Options.numbers else ""
+        punctuation = Options.punctuation
+        characters = lowercase + uppercase + numbers + punctuation
+        nchars = self.length + randint(-self.lrange, self.lrange)
         return "".join(choice(characters) for _ in range(nchars))
 
     def get_entry(self):
@@ -275,12 +281,12 @@ class Write:
             input("Database is empty\n"
                   "Make a new entry first\n"
                   "[enter]...\n")
-            self.main_menu()
+            MainMenu()
         self.__display_entries__()  # print names
         name = input("[enter] Main Menu\n"
                      "[name] Get entry\n")
         if not name:
-            self.main_menu()
+            MainMenu()
         try:
             data = self.dshelf[name]
         except KeyError:
@@ -298,15 +304,13 @@ class Write:
             print(f"{name} not found")
         else:
             Helpers.__display_data__(data, name, quiet)
-        finally:
-            self.dshelf.close()  # done
 
     def new_entry(self):
         """ open or create DATA shelf and write data to it """
         name = input("[enter] Main Menu\n"
                      "[name] Entry\n")
         if not name:
-            self.main_menu()
+            MainMenu()
         if name in self.dshelf:  # entry with 'name' already exists
             data = self.dshelf[name]
             if data:
@@ -319,7 +323,7 @@ class Write:
                               f"[e] Edit {name}\n"
                               f"[r] Replace {name}'\n")
                 if not i:
-                    self.main_menu()
+                    MainMenu()
                 elif i == "t":
                     self.new_entry()  # Try again
                 elif i == "e":
@@ -331,7 +335,6 @@ class Write:
         Helpers().__display_data__(data, name)
         input("Saved\n"
               "[enter]...\n")
-        self.dshelf.close()  # done
 
     def new_random_entry(self):
         self.random = True
@@ -342,7 +345,7 @@ class Write:
         if not self.dshelf:
             input("No data yet\n"
                   "[enter] Main Menu\n")
-            self.main_menu()
+            MainMenu()
         for name in alphabetical:
             data = self.dshelf[name]  # data is itself a dictionary object
             Helpers().__display_data__(data, name)
@@ -373,7 +376,6 @@ class Write:
                     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", file=f)
             print(f"{SAVE} {'written' if mode == 'w' else 'appended'}")
             input("[enter]...\n")
-        self.dshelf.close()  # done
 
     def print_random(self):
         print(self.generate_random())
@@ -394,9 +396,8 @@ class Write:
             return self.emails[1] if len(self.emails) > 1 else ""
         elif i == "*":  # other
             # First input email and save it to OPTIONS
-            oshelf = shelve.open(OPTIONS, writeback=True)
-            ok, email = Helpers().__add_entry__(self.emails, oshelf, "emails")
-            oshelf.close()
+            ok, email = Helpers().__add_entry__(
+                self.emails, Main.oshelf, "emails")
             print(f"{email} saved to your email list") if ok else \
                 print(f"Already have {email} saved")
             return email  # return email either way
@@ -413,10 +414,8 @@ class Write:
             return self.usernames[1] if len(self.usernames) > 1 else ""
         elif i == "*":  # other
             # First add the username and save it to OPTIONS
-            oshelf = shelve.open(OPTIONS, writeback=True)
-            ok, username = Helpers().__add_entry__(self.usernames, oshelf,
-                                                   "usernames")
-            oshelf.close()
+            ok, username = Helpers().__add_entry__(
+                self.usernames, Main.oshelf, "usernames")
             print(f"{username} saved to your usernames list") if ok else \
                 print(f"Already have {username} saved")
             return username  # return username either way
@@ -530,19 +529,10 @@ class Write:
             if m:
                 return m
             else:
-                self.main_menu()
+                MainMenu()
 
 
-class Options:
-    def __init__(self):
-        run = Run()
-        self.emails = run.__get_emails__()
-        self.usernames = run.__get_usernames__()
-        self.length = run.__get_length__()
-        self.lrange = run.__get_range__()
-        self.punctuation = run.__get_punctuation__()
-        self.oshelf = shelve.open(OPTIONS, writeback=True)
-
+class OptionsUI:
     def options_menu(self):
         print("\n~~~~~~~~~~~~~~~\n"
               "    OPTIONS\n"
@@ -569,7 +559,7 @@ class Options:
         while i not in options:
             i = input()
         options[i]()
-        self.options_menu()  # always runOptions until [Main Menu] or [Quit]
+        self.options_menu()  # loop until [Main Menu] or [Quit]
 
     def email_options(self):
         Helpers().__display_list__(self.emails, "emails")
@@ -659,14 +649,6 @@ class Options:
                 self.punctuation = pn[i]
                 self.oshelf["punctuation"] = self.punctuation
                 print(f"Punctuation set to {self.punctuation}")
-
-    def main_menu(self):
-        self.oshelf.close()
-        Run().main_menu()
-
-    def quit(self):
-        self.oshelf.close()
-        Run().goodbye()
 
     def __add_email__(self):
         ok, e = Helpers().__add_entry__(self.emails, self.oshelf, "emails")
@@ -920,25 +902,32 @@ class Helpers:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
 
 
-if __name__ == "__main__":
-    NAME = sys.argv[1:]
+class Main:
+    oshelf = shelve.open(OPTIONS, writeback=True)  # options shelf
+    dshelf = shelve.open(DATA, writeback=True)
 
-
-    def rpm():
-        print("args:", sys.argv)
-        if NAME:  # Command line argument given ==> Non-Interactive Mode
-            Run().no_ui(NAME)  # No user interface
+    def __init__(self):
+        data = Data(self.dshelf)
+        arguments = sys.argv[1:]
+        print("arguments:", arguments)
+        if arguments:  # Command line argument given ==> Non-Interactive Mode
+            options = Options(self.oshelf)
+            NoUI(arguments)  # No user interface
         else:  # No command line argument ==> Interactive Mode
-            Run().main_menu()  # User interface
+            print("\n~~~~~ Welcome to Random P a s s w o r d  Manager ~~~~~\n")
+            options = Options(self.oshelf, )
+            MainMenu()  # User interface
+        self.oshelf.close()
+        self.dshelf.close()
 
 
-    GRAPH = False  # create a call graph
+if __name__ == "__main__":
+    GRAPH = False  # call graph
 
     if GRAPH:
         from pycallgraph import PyCallGraph
         from pycallgraph.output import GraphvizOutput
-
         with PyCallGraph(output=GraphvizOutput()):
-            rpm()
+            Main()
     else:
-        rpm()
+        Main()
